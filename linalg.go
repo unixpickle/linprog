@@ -17,6 +17,15 @@ func (v Vector) Add(other Vector, scale float64) {
 	}
 }
 
+// Col creates a column matrix from the vector.
+func (v Vector) Col() *DenseMatrix {
+	return &DenseMatrix{
+		NumRows: len(v),
+		NumCols: 1,
+		Data:    v,
+	}
+}
+
 // A Matrix is a (potentially sparse) matrix.
 type Matrix interface {
 	Rows() int
@@ -25,6 +34,7 @@ type Matrix interface {
 	Set(i, j int, value float64)
 	ScaleRow(i int, s float64)
 	AddRow(source, dest int, sourceScale float64)
+	Copy() Matrix
 }
 
 // A DenseMatrix is a Matrix that stores every entry
@@ -80,6 +90,93 @@ func (d *DenseMatrix) Row(i int) Vector {
 	return d.Data[i*d.NumCols : (i+1)*d.NumCols]
 }
 
+func (d *DenseMatrix) Copy() Matrix {
+	return &DenseMatrix{
+		NumRows: d.NumRows,
+		NumCols: d.NumCols,
+		Data:    append([]float64{}, d.Data...),
+	}
+}
+
+// A SparseMatrix is a Matrix that lazily populates itself
+// as more and more entries get filled.
+type SparseMatrix struct {
+	NumRows int
+	NumCols int
+	RowData []map[int]float64
+}
+
+func NewSparseMatrix(rows, cols int) *SparseMatrix {
+	res := &SparseMatrix{
+		NumRows: rows,
+		NumCols: cols,
+		RowData: make([]map[int]float64, rows),
+	}
+	for i := range res.RowData {
+		res.RowData[i] = map[int]float64{}
+	}
+	return res
+}
+
+func NewSparseMatrixIdentity(size int) *SparseMatrix {
+	res := NewSparseMatrix(size, size)
+	for i := 0; i < size; i++ {
+		res.Set(i, i, 1)
+	}
+	return res
+}
+
+func (s *SparseMatrix) Rows() int {
+	return s.NumRows
+}
+
+func (s *SparseMatrix) Cols() int {
+	return s.NumCols
+}
+
+func (s *SparseMatrix) At(i, j int) float64 {
+	return s.RowData[i][j]
+}
+
+func (s *SparseMatrix) Set(i, j int, value float64) {
+	if value == 0 {
+		delete(s.RowData[i], j)
+	} else {
+		s.RowData[i][j] = value
+	}
+}
+
+func (s *SparseMatrix) ScaleRow(i int, scale float64) {
+	row := s.RowData[i]
+	for k := range row {
+		row[k] *= scale
+	}
+}
+
+func (s *SparseMatrix) AddRow(source, dest int, sourceScale float64) {
+	sourceRow := s.RowData[source]
+	destRow := s.RowData[dest]
+	for i, x := range sourceRow {
+		destRow[i] += x * sourceScale
+	}
+}
+
+func (s *SparseMatrix) Copy() Matrix {
+	res := &SparseMatrix{
+		NumRows: s.NumRows,
+		NumCols: s.NumCols,
+		RowData: make([]map[int]float64, s.NumRows),
+	}
+	for i, row := range s.RowData {
+		newRow := map[int]float64{}
+		for k, v := range row {
+			newRow[k] = v
+		}
+		res.RowData[i] = newRow
+	}
+	return res
+}
+
 // A ColumnBlockMatrix is a Matrix composed of one or more
 // matrices arranged from left to right. All contained
 // matrices must have the same number of rows.
@@ -128,6 +225,14 @@ func (c ColumnBlockMatrix) AddRow(source, dest int, sourceScale float64) {
 	for _, m := range c {
 		m.AddRow(source, dest, sourceScale)
 	}
+}
+
+func (c ColumnBlockMatrix) Copy() Matrix {
+	var res ColumnBlockMatrix
+	for _, m := range c {
+		res = append(res, m.Copy())
+	}
+	return res
 }
 
 // A RowBlockMatrix is a Matrix composed of one or more
@@ -205,4 +310,12 @@ func (r RowBlockMatrix) AddRow(source, dest int, sourceScale float64) {
 			}
 		}
 	}
+}
+
+func (r RowBlockMatrix) Copy() Matrix {
+	var res RowBlockMatrix
+	for _, m := range r {
+		res = append(res, m.Copy())
+	}
+	return res
 }
