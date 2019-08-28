@@ -3,6 +3,20 @@ package linprog
 // A Vector is an n-dimensional list of numbers.
 type Vector []float64
 
+// Scale multiplies v by s in place.
+func (v Vector) Scale(s float64) {
+	for i, x := range v {
+		v[i] = x * s
+	}
+}
+
+// Add adds other to v in place.
+func (v Vector) Add(other Vector) {
+	for i, x := range other {
+		v[i] += x
+	}
+}
+
 // A Matrix is a (potentially sparse) matrix.
 type Matrix interface {
 	Rows() int
@@ -52,21 +66,16 @@ func (d *DenseMatrix) Set(i, j int, value float64) {
 }
 
 func (d *DenseMatrix) ScaleRow(i int, s float64) {
-	if i < 0 || i >= d.NumRows {
-		panic("index out of bounds")
-	}
-	for j := d.NumCols * i; j < d.NumCols*(i+1); j++ {
-		d.Data[j] *= s
-	}
+	d.Row(i).Scale(s)
 }
 
 func (d *DenseMatrix) AddRow(source, dest int) {
-	if source < 0 || source >= d.NumRows || dest < 0 || dest >= d.NumRows {
+	d.Row(dest).Add(d.Row(source))
+}
+
+func (d *DenseMatrix) Row(i int) Vector {
+	if i < 0 || i >= d.NumRows {
 		panic("index out of bounds")
 	}
-	sourceRow := d.Data[source*d.NumCols : (source+1)*d.NumCols]
-	destRow := d.Data[dest*d.NumCols : (dest+1)*d.NumCols]
-	for i, x := range sourceRow {
-		destRow[i] += x
-	}
+	return d.Data[i*d.NumCols : (i+1)*d.NumCols]
 }
