@@ -15,14 +15,3 @@ type StandardLP interface {
 	ConstraintMatrix() Matrix
 	ConstraintVector() Vector
 }
-
-// A Vector is an n-dimensional list of numbers.
-type Vector []float64
-
-// A Matrix is a (potentially sparse) matrix.
-type Matrix interface {
-	Rows() int
-	Cols() int
-	At(i, j int) float64
-	Set(i, j int, x float64)
-}
