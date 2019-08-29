@@ -1,5 +1,7 @@
 package linprog
 
+import "math"
+
 // A SimplexTableau stores the state of an instance of the
 // simplex algorithm.
 //
@@ -121,7 +123,78 @@ func (s *SimplexTableau) Basic(i int) bool {
 	return res
 }
 
-func (s *SimplexTableau) phase1ToPhase2(lp StandardLP) *SimplexTableau {
-	// TODO: this.
-	return nil
+// phase1ToPhase2 converts a tableau to optimize for the
+// true objective, and knocks out remaining zero
+// artificial variables.
+func (s *SimplexTableau) phase1ToPhase2(lp StandardLP) bool {
+	epsilon := relativeEpsilon * s.Matrix.AbsMax()
+
+	nonBasic := map[int]bool{}
+	for i := 0; i < lp.Dim(); i++ {
+		nonBasic[i] = true
+	}
+
+	var artificialBasics []int
+	for basic, row := range s.BasicToRow {
+		if basic >= lp.Dim() {
+			artificialBasics = append(artificialBasics, basic)
+			if math.Abs(s.Matrix.At(row, s.Matrix.Cols()-1)) > epsilon {
+				// There are no basic feasible solutions.
+				return false
+			}
+		} else {
+			delete(nonBasic, basic)
+		}
+	}
+
+	// Artificial variables may be basic, but they are all
+	// zero valued, so we can put original variables in
+	// their place; or the row is all zeros, in which case
+	// there is a redundant constraint that can be
+	// ignored.
+	for _, artificial := range artificialBasics {
+		row := s.BasicToRow[artificial]
+
+		// Make sure the basic variable is set exactly to
+		// zero, to avoid elimination messing up any
+		// values.
+		s.Matrix.Set(row, s.Matrix.Cols()-1, 0)
+
+		found := false
+		for real := range nonBasic {
+			if math.Abs(s.Matrix.At(row, real)) > epsilon {
+				delete(nonBasic, real)
+				s.Pivot(artificial, real)
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			// The row is all zeros, so this is a redundant
+			// equation and we don't need a basic variable
+			// for it.
+			delete(s.BasicToRow, artificial)
+			delete(s.RowToBasic, row)
+			s.Matrix.ScaleRow(row, 0)
+		}
+	}
+
+	rows := s.Matrix.(RowBlockMatrix)
+	cols := rows[0].(ColumnBlockMatrix)
+
+	s.Matrix = RowBlockMatrix{
+		ColumnBlockMatrix{cols[0], cols[2]},
+		&DenseMatrix{
+			NumRows: 1,
+			NumCols: lp.Dim() + 1,
+			Data:    append(append([]float64{}, lp.Objective()...), 0),
+		},
+	}
+
+	for basic, row := range s.BasicToRow {
+		s.Matrix.AddRow(row, s.Matrix.Rows()-1, -s.Cost(basic))
+	}
+
+	return true
 }

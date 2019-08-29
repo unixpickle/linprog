@@ -1,7 +1,5 @@
 package linprog
 
-const relativeEpsilon = 1e-8
-
 // SimplexPhase1 runs phase 1 of the simplex algorithm to
 // find an initial basic feasible solution.
 //
@@ -26,9 +24,9 @@ func SimplexPhase1(lp StandardLP, pr PivotRule) *SimplexTableau {
 		return nil
 	}
 
-	// TODO: if there's any artificial variables in the basic
-	// set, they are zero and we should swap them out for a
-	// non-basic variable from the original LP.
+	if !tableau.phase1ToPhase2(lp) {
+		return nil
+	}
 
-	// TODO: create a subset of the tableau here.
+	return tableau
 }
