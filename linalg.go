@@ -346,19 +346,23 @@ func (r RowBlockMatrix) ScaleRow(i int, s float64) {
 func (r RowBlockMatrix) AddRow(source, dest int, sourceScale float64) {
 	var sourceMat Matrix
 	var destMat Matrix
-	for _, m := range r {
+	sourceIdx := -1
+	destIdx := -1
+	for i, m := range r {
 		if sourceMat == nil && source < m.Rows() {
 			sourceMat = m
+			sourceIdx = i
 		} else if sourceMat == nil {
 			source -= m.Rows()
 		}
 		if destMat == nil && dest < m.Rows() {
 			destMat = m
+			destIdx = i
 		} else if destMat == nil {
 			dest -= m.Rows()
 		}
 	}
-	if sourceMat == destMat {
+	if sourceIdx == destIdx {
 		sourceMat.AddRow(source, dest, sourceScale)
 	} else {
 		cols := sourceMat.Cols()
