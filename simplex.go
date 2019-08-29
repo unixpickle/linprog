@@ -27,6 +27,5 @@ func SimplexPhase1(lp StandardLP, pr PivotRule) *SimplexTableau {
 	if !tableau.phase1ToPhase2(lp) {
 		return nil
 	}
-
 	return tableau
 }
