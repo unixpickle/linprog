@@ -9,9 +9,13 @@ package linprog
 //
 // Where c is the objective vector, A is the constraint
 // matrix, and b is the constraint vector.
-type StandardLP interface {
-	Dim() int
-	Objective() Vector
-	ConstraintMatrix() Matrix
-	ConstraintVector() Vector
+type StandardLP struct {
+	Objective        Vector
+	ConstraintMatrix Matrix
+	ConstraintVector Vector
+}
+
+// Dim gets the number of variables in the program.
+func (s *StandardLP) Dim() int {
+	return len(s.Objective)
 }

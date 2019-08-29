@@ -1,5 +1,28 @@
 package linprog
 
+// Simplex runs the simplex algorithm to completion and
+// returns a solution if one is found. If there is no
+// solution, nil is returned and the boolean return value
+// is true if the problem is unbounded, or false if the
+// problem has no feasible solutions.
+func Simplex(lp *StandardLP, pr PivotRule) (Vector, bool) {
+	tableau := SimplexPhase1(lp, pr)
+	if tableau == nil {
+		return nil, false
+	}
+	for {
+		leaving, entering, status := pr.ChoosePivot(tableau)
+		if status == Unbounded {
+			return nil, true
+		} else if status == Optimal {
+			break
+		} else {
+			tableau.Pivot(leaving, entering)
+		}
+	}
+	return tableau.Solution(), true
+}
+
 // SimplexPhase1 runs phase 1 of the simplex algorithm to
 // find an initial basic feasible solution.
 //
@@ -7,7 +30,7 @@ package linprog
 //
 // If no basic feasible solution can be found, nil is
 // returned.
-func SimplexPhase1(lp StandardLP, pr PivotRule) *SimplexTableau {
+func SimplexPhase1(lp *StandardLP, pr PivotRule) *SimplexTableau {
 	tableau := NewTableauPhase1(lp)
 	for {
 		leaving, entering, status := pr.ChoosePivot(tableau)

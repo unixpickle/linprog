@@ -36,21 +36,21 @@ type SimplexTableau struct {
 // The new objective will aim to set the artificial
 // variables to zero, resulting in a smaller tableau for
 // phase 2 of the algorithm.
-func NewTableauPhase1(lp StandardLP) *SimplexTableau {
+func NewTableauPhase1(lp *StandardLP) *SimplexTableau {
 	// Construct a matrix that looks like:
 	//
 	// [    [A]       [I]    b ]
 	// [ ... 0 ... -1 ... -1 0 ]
 	//
-	numConstraints := len(lp.ConstraintVector())
+	numConstraints := len(lp.ConstraintVector)
 	lastRow := make(Vector, lp.Dim()+numConstraints+1)
 	for i := lp.Dim(); i < len(lastRow)-1; i++ {
 		lastRow[i] = -1
 	}
-	block1 := lp.ConstraintMatrix().Copy()
+	block1 := lp.ConstraintMatrix.Copy()
 	block2 := NewSparseMatrixIdentity(numConstraints)
-	block3 := lp.ConstraintVector().Col().Copy()
-	for i, bValue := range lp.ConstraintVector() {
+	block3 := lp.ConstraintVector.Col().Copy()
+	for i, bValue := range lp.ConstraintVector {
 		if bValue < 0 {
 			block1.ScaleRow(i, -1)
 			block3.ScaleRow(i, -1)
@@ -123,10 +123,19 @@ func (s *SimplexTableau) Basic(i int) bool {
 	return res
 }
 
+// Solution gets the current solution vector.
+func (s *SimplexTableau) Solution() Vector {
+	res := make(Vector, s.Dim())
+	for basic, row := range s.BasicToRow {
+		res[basic] = s.Matrix.At(row, s.Matrix.Cols()-1)
+	}
+	return res
+}
+
 // phase1ToPhase2 converts a tableau to optimize for the
 // true objective, and knocks out remaining zero
 // artificial variables.
-func (s *SimplexTableau) phase1ToPhase2(lp StandardLP) bool {
+func (s *SimplexTableau) phase1ToPhase2(lp *StandardLP) bool {
 	epsilon := relativeEpsilon * s.Matrix.AbsMax()
 
 	nonBasic := map[int]bool{}
@@ -188,7 +197,7 @@ func (s *SimplexTableau) phase1ToPhase2(lp StandardLP) bool {
 		&DenseMatrix{
 			NumRows: 1,
 			NumCols: lp.Dim() + 1,
-			Data:    append(append([]float64{}, lp.Objective()...), 0),
+			Data:    append(append([]float64{}, lp.Objective...), 0),
 		},
 	}
 

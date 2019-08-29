@@ -35,6 +35,19 @@ func (v Vector) Row() *DenseMatrix {
 	}
 }
 
+// AbsMax gets the maximum absoute value in the vector.
+func (v Vector) AbsMax() float64 {
+	var res float64
+	for _, x := range v {
+		if x > res {
+			res = x
+		} else if -x > res {
+			res = -x
+		}
+	}
+	return res
+}
+
 // A Matrix is a (potentially sparse) matrix.
 type Matrix interface {
 	Rows() int
