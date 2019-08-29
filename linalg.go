@@ -26,6 +26,15 @@ func (v Vector) Col() *DenseMatrix {
 	}
 }
 
+// Row creates a row matrix from the vector.
+func (v Vector) Row() *DenseMatrix {
+	return &DenseMatrix{
+		NumRows: 1,
+		NumCols: len(v),
+		Data:    v,
+	}
+}
+
 // A Matrix is a (potentially sparse) matrix.
 type Matrix interface {
 	Rows() int

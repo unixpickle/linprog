@@ -34,7 +34,7 @@ type BlandPivotRule struct{}
 func (b BlandPivotRule) ChoosePivot(s *SimplexTableau) (int, int, SimplexStatus) {
 	enterVar := -1
 	for i := 0; i < s.Dim(); i++ {
-		if !s.Basic(i) && !s.FrozenVariables[i] && s.Cost(i) > 0 {
+		if !s.Basic(i) && s.Cost(i) > 0 {
 			enterVar = i
 			break
 		}
@@ -42,25 +42,20 @@ func (b BlandPivotRule) ChoosePivot(s *SimplexTableau) (int, int, SimplexStatus)
 	if enterVar == -1 {
 		return 0, 0, Optimal
 	}
-	pivotRow := -1
+	leaveVar := -1
 	minRatio := math.Inf(1)
-	for i := 1; i < s.Matrix.Rows(); i++ {
-		if s.FrozenVariables[s.RowToBasic[i-1]] {
-			continue
-		}
-		entry := s.Matrix.At(enterVar+1, i)
+	for row, basic := range s.RowToBasic {
+		entry := s.Matrix.At(row, enterVar)
 		if entry > 0 {
-			ratio := s.Matrix.At(s.Matrix.Cols()-1, i) / entry
+			ratio := s.Matrix.At(row, s.Matrix.Cols()-1) / entry
 			if ratio < minRatio {
 				minRatio = ratio
-				pivotRow = i
+				leaveVar = basic
 			}
 		}
 	}
-	if pivotRow == -1 {
+	if leaveVar == -1 {
 		return 0, 0, Unbounded
 	}
-	leaveVar := s.RowToBasic[pivotRow-1]
-
 	return leaveVar, enterVar, Working
 }
