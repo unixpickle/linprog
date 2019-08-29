@@ -34,6 +34,7 @@ type Matrix interface {
 	Set(i, j int, value float64)
 	ScaleRow(i int, s float64)
 	AddRow(source, dest int, sourceScale float64)
+	AbsMax() float64
 	Copy() Matrix
 }
 
@@ -88,6 +89,18 @@ func (d *DenseMatrix) Row(i int) Vector {
 		panic("index out of bounds")
 	}
 	return d.Data[i*d.NumCols : (i+1)*d.NumCols]
+}
+
+func (d *DenseMatrix) AbsMax() float64 {
+	res := 0.0
+	for _, x := range d.Data {
+		if x > res {
+			res = x
+		} else if -x > res {
+			res = -x
+		}
+	}
+	return res
 }
 
 func (d *DenseMatrix) Copy() Matrix {
@@ -161,6 +174,20 @@ func (s *SparseMatrix) AddRow(source, dest int, sourceScale float64) {
 	}
 }
 
+func (s *SparseMatrix) AbsMax() float64 {
+	res := 0.0
+	for _, row := range s.RowData {
+		for _, x := range row {
+			if x > res {
+				res = x
+			} else if -x > res {
+				res = -x
+			}
+		}
+	}
+	return res
+}
+
 func (s *SparseMatrix) Copy() Matrix {
 	res := &SparseMatrix{
 		NumRows: s.NumRows,
@@ -225,6 +252,16 @@ func (c ColumnBlockMatrix) AddRow(source, dest int, sourceScale float64) {
 	for _, m := range c {
 		m.AddRow(source, dest, sourceScale)
 	}
+}
+
+func (c ColumnBlockMatrix) AbsMax() float64 {
+	res := 0.0
+	for _, m := range c {
+		if max := m.AbsMax(); max > res {
+			res = max
+		}
+	}
+	return res
 }
 
 func (c ColumnBlockMatrix) Copy() Matrix {
@@ -310,6 +347,16 @@ func (r RowBlockMatrix) AddRow(source, dest int, sourceScale float64) {
 			}
 		}
 	}
+}
+
+func (r RowBlockMatrix) AbsMax() float64 {
+	res := 0.0
+	for _, m := range r {
+		if max := m.AbsMax(); max > res {
+			res = max
+		}
+	}
+	return res
 }
 
 func (r RowBlockMatrix) Copy() Matrix {
