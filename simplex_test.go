@@ -1,6 +1,9 @@
 package linprog
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestSimplex2D(t *testing.T) {
 	// Maximize -4.5x + 3.5y, subject to x-y = 1
@@ -91,6 +94,25 @@ func TestSimplex6D(t *testing.T) {
 		t.Errorf("unexpected return %v %v", solution, ok)
 	} else if !vectorsEqual(solution, Vector{5, 4, 0, 0, 0, 0}) {
 		t.Errorf("unexpected solution: %v", solution)
+	}
+}
+
+func BenchmarkSimplexRandom(b *testing.B) {
+	for _, size := range []int{10, 30, 50, 70, 90, 110} {
+		b.Run(fmt.Sprintf("Size%d", size), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				problem := &StandardLP{
+					Objective: NewVectorRandom(size),
+					ConstraintMatrix: &DenseMatrix{
+						NumRows: size - 1,
+						NumCols: size,
+						Data:    NewVectorRandom(size * (size - 1)),
+					},
+					ConstraintVector: NewVectorRandom(size - 1),
+				}
+				Simplex(problem, GreedyPivotRule{})
+			}
+		})
 	}
 }
 

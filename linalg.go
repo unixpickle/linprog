@@ -1,7 +1,19 @@
 package linprog
 
+import "math/rand"
+
 // A Vector is an n-dimensional list of numbers.
 type Vector []float64
+
+// NewVectorRandom creates a vector with normally
+// distributed entries.
+func NewVectorRandom(size int) Vector {
+	res := make(Vector, size)
+	for i := range res {
+		res[i] = rand.NormFloat64()
+	}
+	return res
+}
 
 // Scale multiplies v by s in place.
 func (v Vector) Scale(s float64) {

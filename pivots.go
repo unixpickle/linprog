@@ -42,6 +42,38 @@ func (b BlandPivotRule) ChoosePivot(s *SimplexTableau) (int, int, SimplexStatus)
 	if enterVar == -1 {
 		return 0, 0, Optimal
 	}
+	leaveVar := minRatioLeaveVariable(s, enterVar)
+	if leaveVar == -1 {
+		return 0, 0, Unbounded
+	}
+	return leaveVar, enterVar, Working
+}
+
+// GreedyPivotRule is a PivotRule that picks the column
+// with the highest relative cost coefficient.
+type GreedyPivotRule struct{}
+
+func (g GreedyPivotRule) ChoosePivot(s *SimplexTableau) (int, int, SimplexStatus) {
+	enterVar := -1
+	bestCost := 0.0
+	for i := 0; i < s.Dim(); i++ {
+		cost := s.Cost(i)
+		if !s.Basic(i) && cost > bestCost {
+			enterVar = i
+			bestCost = cost
+		}
+	}
+	if enterVar == -1 {
+		return 0, 0, Optimal
+	}
+	leaveVar := minRatioLeaveVariable(s, enterVar)
+	if leaveVar == -1 {
+		return 0, 0, Unbounded
+	}
+	return leaveVar, enterVar, Working
+}
+
+func minRatioLeaveVariable(s *SimplexTableau, enterVar int) int {
 	leaveVar := -1
 	minRatio := math.Inf(1)
 	for row, basic := range s.RowToBasic {
@@ -54,8 +86,5 @@ func (b BlandPivotRule) ChoosePivot(s *SimplexTableau) (int, int, SimplexStatus)
 			}
 		}
 	}
-	if leaveVar == -1 {
-		return 0, 0, Unbounded
-	}
-	return leaveVar, enterVar, Working
+	return leaveVar
 }
