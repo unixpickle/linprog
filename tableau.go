@@ -36,7 +36,7 @@ type SimplexTableau struct {
 // The new objective will aim to set the artificial
 // variables to zero, resulting in a smaller tableau for
 // phase 2 of the algorithm.
-func NewTableauPhase1(lp *StandardLP) *SimplexTableau {
+func NewTableauPhase1(lp *StandardLP, dense bool) *SimplexTableau {
 	// Construct a matrix that looks like:
 	//
 	// [    [A]       [I]    b ]
@@ -48,7 +48,12 @@ func NewTableauPhase1(lp *StandardLP) *SimplexTableau {
 		lastRow[i] = -1
 	}
 	block1 := lp.ConstraintMatrix.Copy()
-	block2 := NewSparseMatrixIdentity(numConstraints)
+	var block2 Matrix
+	if dense {
+		block2 = NewDenseMatrixIdentity(numConstraints)
+	} else {
+		block2 = NewSparseMatrixIdentity(numConstraints)
+	}
 	block3 := lp.ConstraintVector.Col().Copy()
 	for i, bValue := range lp.ConstraintVector {
 		if bValue < 0 {

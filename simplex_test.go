@@ -16,7 +16,7 @@ func TestSimplex2D(t *testing.T) {
 		},
 		ConstraintVector: Vector{1},
 	}
-	solution, ok := Simplex(problem, BlandPivotRule{})
+	solution, ok := Simplex(problem, BlandPivotRule{}, false)
 	if solution == nil || !ok {
 		t.Errorf("unexpected return %v %v", solution, ok)
 	} else if !vectorsEqual(solution, Vector{1, 0}) {
@@ -25,7 +25,7 @@ func TestSimplex2D(t *testing.T) {
 
 	// Maximize 4.5x + 3.5y, subject to x-y = 1
 	problem.Objective = Vector{4.5, 3.5}
-	solution, ok = Simplex(problem, BlandPivotRule{})
+	solution, ok = Simplex(problem, BlandPivotRule{}, false)
 	if solution != nil || !ok {
 		t.Errorf("unexpected return %v %v", solution, ok)
 	}
@@ -37,7 +37,7 @@ func TestSimplex2D(t *testing.T) {
 		Data:    []float64{1, -1, 2, -2},
 	}
 	problem.ConstraintVector = Vector{1, 1.5}
-	solution, ok = Simplex(problem, BlandPivotRule{})
+	solution, ok = Simplex(problem, BlandPivotRule{}, false)
 	if solution != nil || ok {
 		t.Errorf("unexpected return %v %v", solution, ok)
 	}
@@ -45,7 +45,7 @@ func TestSimplex2D(t *testing.T) {
 	// Maximize -4.5x + 3.5y, subject to x-y = 1 and 2x - 2y = 2.
 	problem.Objective = Vector{-4.5, 3.5}
 	problem.ConstraintVector = Vector{1, 2}
-	solution, ok = Simplex(problem, BlandPivotRule{})
+	solution, ok = Simplex(problem, BlandPivotRule{}, false)
 	if solution == nil || !ok {
 		t.Errorf("unexpected return %v %v", solution, ok)
 	} else if !vectorsEqual(solution, Vector{1, 0}) {
@@ -65,7 +65,7 @@ func TestSimplex3D(t *testing.T) {
 		},
 		ConstraintVector: Vector{10, 15},
 	}
-	solution, ok := Simplex(problem, BlandPivotRule{})
+	solution, ok := Simplex(problem, BlandPivotRule{}, false)
 	if solution == nil || !ok {
 		t.Errorf("unexpected return %v %v", solution, ok)
 	} else if !vectorsEqual(solution, Vector{15.0 / 7.0, 0, 25.0 / 7.0}) {
@@ -89,7 +89,7 @@ func TestSimplex6D(t *testing.T) {
 		},
 		ConstraintVector: Vector{14, 28, 30},
 	}
-	solution, ok := Simplex(problem, BlandPivotRule{})
+	solution, ok := Simplex(problem, BlandPivotRule{}, false)
 	if solution == nil || !ok {
 		t.Errorf("unexpected return %v %v", solution, ok)
 	} else if !vectorsEqual(solution, Vector{5, 4, 0, 0, 0, 0}) {
@@ -110,7 +110,7 @@ func BenchmarkSimplexRandom(b *testing.B) {
 					},
 					ConstraintVector: NewVectorRandom(size - 1),
 				}
-				Simplex(problem, GreedyPivotRule{})
+				Simplex(problem, GreedyPivotRule{}, true)
 			}
 		})
 	}

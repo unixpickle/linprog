@@ -5,8 +5,8 @@ package linprog
 // solution, nil is returned and the boolean return value
 // is true if the problem is unbounded, or false if the
 // problem has no feasible solutions.
-func Simplex(lp *StandardLP, pr PivotRule) (Vector, bool) {
-	tableau := SimplexPhase1(lp, pr)
+func Simplex(lp *StandardLP, pr PivotRule, dense bool) (Vector, bool) {
+	tableau := SimplexPhase1(lp, pr, dense)
 	if tableau == nil {
 		return nil, false
 	}
@@ -30,8 +30,8 @@ func Simplex(lp *StandardLP, pr PivotRule) (Vector, bool) {
 //
 // If no basic feasible solution can be found, nil is
 // returned.
-func SimplexPhase1(lp *StandardLP, pr PivotRule) *SimplexTableau {
-	tableau := NewTableauPhase1(lp)
+func SimplexPhase1(lp *StandardLP, pr PivotRule, dense bool) *SimplexTableau {
+	tableau := NewTableauPhase1(lp, dense)
 	for {
 		leaving, entering, status := pr.ChoosePivot(tableau)
 		if status == Unbounded {

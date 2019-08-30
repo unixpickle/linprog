@@ -88,6 +88,14 @@ func NewDenseMatrix(rows, cols int) *DenseMatrix {
 	}
 }
 
+func NewDenseMatrixIdentity(size int) *DenseMatrix {
+	res := NewDenseMatrix(size, size)
+	for i := 0; i < size; i++ {
+		res.Set(i, i, 1)
+	}
+	return res
+}
+
 func (d *DenseMatrix) Rows() int {
 	return d.NumRows
 }
