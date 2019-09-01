@@ -350,13 +350,24 @@ func (c ColumnBlockMatrix) Copy() Matrix {
 }
 
 func (c ColumnBlockMatrix) CopyRow(i int) Vector {
-	// TODO: this.
-	panic("nyi")
+	res := make(Vector, 0, c.Cols())
+	for _, m := range c {
+		res = append(res, m.CopyRow(i)...)
+	}
+	return res
 }
 
 func (c ColumnBlockMatrix) CopyCol(i int) Vector {
-	// TODO: this.
-	panic("nyi")
+	if i < 0 {
+		panic("index out of range")
+	}
+	for _, m := range c {
+		if i < m.Cols() {
+			return m.CopyCol(i)
+		}
+		i -= m.Cols()
+	}
+	panic("index out of range")
 }
 
 // A RowBlockMatrix is a Matrix composed of one or more
@@ -459,11 +470,22 @@ func (r RowBlockMatrix) Copy() Matrix {
 }
 
 func (r RowBlockMatrix) CopyRow(i int) Vector {
-	// TODO: this.
-	panic("nyi")
+	if i < 0 {
+		panic("index out of range")
+	}
+	for _, m := range r {
+		if i < m.Rows() {
+			return m.CopyRow(i)
+		}
+		i -= m.Rows()
+	}
+	panic("index out of range")
 }
 
 func (r RowBlockMatrix) CopyCol(i int) Vector {
-	// TODO: this.
-	panic("nyi")
+	res := make(Vector, 0, r.Rows())
+	for _, m := range r {
+		res = append(res, m.CopyCol(i)...)
+	}
+	return res
 }
