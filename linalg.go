@@ -70,6 +70,8 @@ type Matrix interface {
 	AddRow(source, dest int, sourceScale float64)
 	AbsMax() float64
 	Copy() Matrix
+	CopyRow(i int) Vector
+	CopyCol(i int) Vector
 }
 
 // A DenseMatrix is a Matrix that stores every entry
@@ -151,6 +153,23 @@ func (d *DenseMatrix) Copy() Matrix {
 		NumCols: d.NumCols,
 		Data:    append([]float64{}, d.Data...),
 	}
+}
+
+func (d *DenseMatrix) CopyRow(i int) Vector {
+	if i < 0 || i >= d.NumRows {
+		panic("index out of range")
+	}
+	return append(Vector{}, d.Data[i*d.NumCols:(i+1)*d.NumCols]...)
+}
+
+func (d *DenseMatrix) CopyCol(i int) Vector {
+	v := make(Vector, d.NumRows)
+	idx := i
+	for j := 0; j < d.NumRows; j++ {
+		v[j] = d.Data[idx]
+		idx += d.NumCols
+	}
+	return v
 }
 
 // A SparseMatrix is a Matrix that lazily populates itself
@@ -246,6 +265,22 @@ func (s *SparseMatrix) Copy() Matrix {
 	return res
 }
 
+func (s *SparseMatrix) CopyRow(i int) Vector {
+	res := make(Vector, s.NumCols)
+	for k, v := range s.RowData[i] {
+		res[k] = v
+	}
+	return res
+}
+
+func (s *SparseMatrix) CopyCol(i int) Vector {
+	res := make(Vector, s.NumRows)
+	for j, m := range s.RowData {
+		res[j] = m[i]
+	}
+	return res
+}
+
 // A ColumnBlockMatrix is a Matrix composed of one or more
 // matrices arranged from left to right. All contained
 // matrices must have the same number of rows.
@@ -312,6 +347,16 @@ func (c ColumnBlockMatrix) Copy() Matrix {
 		res = append(res, m.Copy())
 	}
 	return res
+}
+
+func (c ColumnBlockMatrix) CopyRow(i int) Vector {
+	// TODO: this.
+	panic("nyi")
+}
+
+func (c ColumnBlockMatrix) CopyCol(i int) Vector {
+	// TODO: this.
+	panic("nyi")
 }
 
 // A RowBlockMatrix is a Matrix composed of one or more
@@ -411,4 +456,14 @@ func (r RowBlockMatrix) Copy() Matrix {
 		res = append(res, m.Copy())
 	}
 	return res
+}
+
+func (r RowBlockMatrix) CopyRow(i int) Vector {
+	// TODO: this.
+	panic("nyi")
+}
+
+func (r RowBlockMatrix) CopyCol(i int) Vector {
+	// TODO: this.
+	panic("nyi")
 }
