@@ -122,6 +122,12 @@ func (s *SimplexTableau) Cost(i int) float64 {
 	return s.Matrix.At(s.Matrix.Rows()-1, i)
 }
 
+// Costs gets the relative cost coefficients for all the
+// variables at once.
+func (s *SimplexTableau) Costs() Vector {
+	return s.Matrix.CopyRow(s.Matrix.Rows() - 1)[:s.Matrix.Cols()-1]
+}
+
 // Basic checks if a variable is basic.
 func (s *SimplexTableau) Basic(i int) bool {
 	_, res := s.BasicToRow[i]

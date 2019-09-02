@@ -56,8 +56,7 @@ type GreedyPivotRule struct{}
 func (g GreedyPivotRule) ChoosePivot(s *SimplexTableau) (int, int, SimplexStatus) {
 	enterVar := -1
 	bestCost := 0.0
-	for i := 0; i < s.Dim(); i++ {
-		cost := s.Cost(i)
+	for i, cost := range s.Costs() {
 		if !s.Basic(i) && cost > bestCost {
 			enterVar = i
 			bestCost = cost
@@ -76,10 +75,12 @@ func (g GreedyPivotRule) ChoosePivot(s *SimplexTableau) (int, int, SimplexStatus
 func minRatioLeaveVariable(s *SimplexTableau, enterVar int) int {
 	leaveVar := -1
 	minRatio := math.Inf(1)
+	entries := s.Matrix.CopyCol(enterVar)
+	values := s.Matrix.CopyCol(s.Matrix.Cols() - 1)
 	for row, basic := range s.RowToBasic {
-		entry := s.Matrix.At(row, enterVar)
+		entry := entries[row]
 		if entry > 0 {
-			ratio := s.Matrix.At(row, s.Matrix.Cols()-1) / entry
+			ratio := values[row] / entry
 			if ratio < minRatio {
 				minRatio = ratio
 				leaveVar = basic
