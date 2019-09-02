@@ -60,6 +60,28 @@ func (v Vector) AbsMax() float64 {
 	return res
 }
 
+// Abs gets the absolute value of the vector.
+func (v Vector) Abs() Vector {
+	res := make(Vector, len(v))
+	for i, x := range v {
+		if x < 0 {
+			res[i] = -x
+		} else {
+			res[i] = x
+		}
+	}
+	return res
+}
+
+// Dot computes the dot product between v and v1.
+func (v Vector) Dot(v1 Vector) float64 {
+	var res float64
+	for i, x := range v {
+		res += x * v1[i]
+	}
+	return res
+}
+
 // A Matrix is a (potentially sparse) matrix.
 type Matrix interface {
 	Rows() int

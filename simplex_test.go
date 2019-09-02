@@ -101,6 +101,7 @@ func BenchmarkSimplexRandom(b *testing.B) {
 	for _, size := range []int{10, 30, 50, 70, 90, 110} {
 		b.Run(fmt.Sprintf("Size%d", size), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
+				b.StopTimer()
 				problem := &StandardLP{
 					Objective: NewVectorRandom(size),
 					ConstraintMatrix: &DenseMatrix{
@@ -108,8 +109,13 @@ func BenchmarkSimplexRandom(b *testing.B) {
 						NumCols: size,
 						Data:    NewVectorRandom(size * (size - 1)),
 					},
-					ConstraintVector: NewVectorRandom(size - 1),
+					ConstraintVector: make(Vector, size-1),
 				}
+				values := NewVectorRandom(size).Abs()
+				for i := range problem.ConstraintVector {
+					problem.ConstraintVector[i] = problem.ConstraintMatrix.CopyRow(i).Dot(values)
+				}
+				b.StartTimer()
 				Simplex(problem, GreedyPivotRule{}, true)
 			}
 		})
