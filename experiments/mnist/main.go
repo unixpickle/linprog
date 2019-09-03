@@ -18,7 +18,7 @@ import (
 	"github.com/unixpickle/mnist"
 )
 
-const MaxDelta = 0.05
+const MaxDelta = 0.2
 
 func main() {
 	log.Println("Training/loading classifier...")
