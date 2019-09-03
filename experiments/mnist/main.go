@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"image/png"
@@ -37,6 +38,7 @@ func GenerateAdversarial(classifier anynet.Net, sample mnist.Sample, targetLabel
 	v := &anydiff.Var{Vector: Creator.MakeVectorData(Creator.MakeNumericList(sample.Intensities))}
 	activations := classifier[:1].Apply(v, 1)
 	outs := classifier[1:].Apply(activations, 1)
+	oldProb := math.Exp(Creator.Float64Slice(outs.Output().Data())[targetLabel])
 	out := anydiff.Slice(outs, targetLabel, targetLabel+1)
 	gradient := anydiff.NewGrad(v)
 	out.Propagate(anyvec.Ones(Creator, 1), gradient)
@@ -50,6 +52,13 @@ func GenerateAdversarial(classifier anynet.Net, sample mnist.Sample, targetLabel
 	if !solved {
 		essentials.Die("unsolvable system")
 	}
+	solution = solution[:28*28]
+
+	outs = classifier.Apply(anydiff.NewConst(anyvec.Make(Creator, solution)), 1)
+	newProb := math.Exp(Creator.Float64Slice(outs.Output().Data())[targetLabel])
+
+	fmt.Println("Went from", oldProb, "to", newProb)
+
 	return solution
 }
 
