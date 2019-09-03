@@ -18,32 +18,34 @@ import (
 	"github.com/unixpickle/mnist"
 )
 
-const MaxDelta = 0.2
+const MaxDelta = 0.1
 
 func main() {
 	log.Println("Training/loading classifier...")
 	classifier := TrainClassifier()
 
 	data := mnist.LoadTestingDataSet()
-	sample := data.Samples[0]
 
-	targetLabel := (sample.Label + 1) % 10
-	intensities := GenerateAdversarial(classifier, sample, targetLabel)
-	SaveImage("adversarial.png", intensities)
+	for i := 0; i < 10; i++ {
+		sample := data.Samples[i]
+		intensities := GenerateAdversarial(classifier, sample)
+		SaveImage(fmt.Sprintf("adversarial%d.png", i), intensities)
+	}
 }
 
-func GenerateAdversarial(classifier anynet.Net, sample mnist.Sample, targetLabel int) []float64 {
-	log.Printf("Turning a %d into a %d", sample.Label, targetLabel)
+func GenerateAdversarial(classifier anynet.Net, sample mnist.Sample) []float64 {
+	log.Printf("Creating adversarial example for %d", sample.Label)
 
 	v := &anydiff.Var{Vector: Creator.MakeVectorData(Creator.MakeNumericList(sample.Intensities))}
 	activations := classifier[:1].Apply(v, 1)
 	outs := classifier[1:].Apply(activations, 1)
-	oldProb := math.Exp(Creator.Float64Slice(outs.Output().Data())[targetLabel])
-	out := anydiff.Slice(outs, targetLabel, targetLabel+1)
+	oldProb := math.Exp(Creator.Float64Slice(outs.Output().Data())[sample.Label])
+	out := anydiff.Slice(outs, sample.Label, sample.Label+1)
 	gradient := anydiff.NewGrad(v)
 	out.Propagate(anyvec.Ones(Creator, 1), gradient)
 
 	gradVec := linprog.Vector(Creator.Float64Slice(gradient[v].Data()))
+	gradVec.Scale(-1)
 	activationsVec := linprog.Vector(Creator.Float64Slice(activations.Output().Data()))
 	weights, biases := ConvertLayer(classifier[0].(*anynet.FC))
 	system := CreateLinearProgram(sample.Intensities, gradVec, activationsVec, biases, weights)
@@ -55,7 +57,7 @@ func GenerateAdversarial(classifier anynet.Net, sample mnist.Sample, targetLabel
 	solution = solution[:28*28]
 
 	outs = classifier.Apply(anydiff.NewConst(anyvec.Make(Creator, solution)), 1)
-	newProb := math.Exp(Creator.Float64Slice(outs.Output().Data())[targetLabel])
+	newProb := math.Exp(Creator.Float64Slice(outs.Output().Data())[sample.Label])
 
 	fmt.Println("Went from", oldProb, "to", newProb)
 
