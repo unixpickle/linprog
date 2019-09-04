@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 import torch.nn as nn
 
 
@@ -35,12 +36,12 @@ def input_linear_program(model, inputs, out_loss_fn, epsilon=0.1, min=0, max=1):
     b_ub = []
     for i, layer in enumerate(model):
         if isinstance(layer, nn.ReLU):
-            batch_x = inputs[None].repeat(1)
+            batch_x = inputs[None]
             outputs = model[:i](batch_x).detach().cpu().numpy()[0]
             shape = outputs.shape
             outputs = outputs.flatten()
             num_dims = int(np.prod(shape))
-            batch_x = x[None].repeat(num_dims).clone().detach().requires_grad_(True)
+            batch_x = inputs[None].repeat(num_dims).clone().detach().requires_grad_(True)
             batch_y = model[:i](batch_x)
             batch_y.view(num_dims, num_dims).backward(torch.eye(num_dims))
             gradient = batch_x.grad.data.view(num_dims, input_size).detach().cpu().numpy()
@@ -51,5 +52,8 @@ def input_linear_program(model, inputs, out_loss_fn, epsilon=0.1, min=0, max=1):
                 else:
                     A_ub.append(gradient[i] * -1)
                     b_ub.append(outputs[i])
-    c = None  # TODO: gradient here.
+    # TODO: add constraints for epsilon, min, and max.
+    in_with_grad = inputs[None].clone().detach().requires_grad_(True)
+    torch.sum(out_loss_fn(model(in_with_grad))).backward()
+    c = in_with_grad.grad.data.detach().cpu().numpy()
     return c, A_ub, b_ub
