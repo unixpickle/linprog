@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 
 
-def input_linear_program(model, inputs, out_loss_fn, epsilon=0.1, min=0, max=1):
+def input_linear_program(model, inputs, out_loss_fn, epsilon=0.1, min_val=0, max_val=1):
     """
     Create a linear program that adjusts the inputs up to
     some epsilon to maximize the output loss function,
@@ -18,8 +18,8 @@ def input_linear_program(model, inputs, out_loss_fn, epsilon=0.1, min=0, max=1):
           the full model and produces a batch of loss
           values to maximize.
         epsilon: the maximum delta to the inputs.
-        min: the minimum value of the adjusted inputs.
-        max: the maximum value of the adjusted inputs.
+        min_val: the minimum value of the adjusted inputs.
+        max_val: the maximum value of the adjusted inputs.
 
     Returns:
         A tuple (c, A_ub, b_ub):
@@ -52,8 +52,14 @@ def input_linear_program(model, inputs, out_loss_fn, epsilon=0.1, min=0, max=1):
                 else:
                     A_ub.append(gradient[i] * -1)
                     b_ub.append(outputs[i])
-    # TODO: add constraints for epsilon, min, and max.
+    for i, x in enumerate(inputs.detach().cpu().numpy().flatten()):
+        a_vec = np.zeros([input_size], dtype=np.float32)
+        a_vec[i] = 1
+        A_ub.append(a_vec)
+        b_ub.append(min(max_val - x, epsilon))
+        A_ub.append(-a_vec)
+        b_ub.append(min(x - min_val, epsilon))
     in_with_grad = inputs[None].clone().detach().requires_grad_(True)
     torch.sum(out_loss_fn(model(in_with_grad))).backward()
     c = in_with_grad.grad.data.detach().cpu().numpy()
-    return c, A_ub, b_ub
+    return c, np.array(A_ub), np.array(b_ub)
