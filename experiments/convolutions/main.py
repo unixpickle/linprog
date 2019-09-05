@@ -1,4 +1,5 @@
 from scipy.optimize import linprog
+import torch
 import torch.nn.functional as F
 
 from classifier import train_mnist_model, mnist_loader
@@ -15,11 +16,15 @@ def main():
 
         def loss_fn(x):
             return -F.log_softmax(x, dim=0)[label]
+        print('creating linear program...')
         grad, constraint_coeffs, constraint_bounds = input_linear_program(model, sample, loss_fn)
-        print('running linprog with %d constraints' % constraint_coeffs.shape[0])
-        solution = linprog(grad, A_ub=constraint_coeffs, b_ub=constraint_bounds,
+        print('running linprog with %d constraints...' % constraint_coeffs.shape[0])
+        solution = linprog(-grad, A_ub=constraint_coeffs, b_ub=constraint_bounds,
                            bounds=(None, None))
-        print(solution.x)
+        new_input = sample + torch.from_numpy(solution.x).float().view(*sample.shape)
+        old_prob = F.log_softmax(model(sample[None]), dim=-1)[0, label]
+        new_prob = F.log_softmax(model(new_input[None]), dim=-1)[0, label]
+        print('correct log prob went from %f to %f' % (old_prob, new_prob))
 
 
 if __name__ == '__main__':

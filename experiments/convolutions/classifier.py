@@ -32,7 +32,7 @@ def train_mnist_model():
     for data, target in train_loader:
         optimizer.zero_grad()
         output = model(data)
-        loss = F.nll_loss(output, target)
+        loss = F.nll_loss(F.log_softmax(output, dim=-1), target)
         loss.backward()
         optimizer.step()
     torch.save(model.state_dict(), MODEL_PATH)
@@ -44,7 +44,6 @@ def mnist_loader(train=True, batch=100):
         datasets.MNIST('../data', train=train, download=True,
                        transform=transforms.Compose([
                            transforms.ToTensor(),
-                           transforms.Normalize((0.0,), (255.0,))
                        ])),
         batch_size=batch,
         shuffle=True)
