@@ -35,24 +35,26 @@ def input_linear_program(model, inputs, out_loss_fn, epsilon=0.1, min_val=0, max
     A_ub = []
     b_ub = []
     for i, layer in enumerate(model):
-        if isinstance(layer, nn.ReLU):
-            batch_x = inputs[None]
-            outputs = model[:i](batch_x).detach().cpu().numpy()[0]
-            num_dims = int(np.prod(outputs.shape))
-            outputs = outputs.flatten()
+        if not isinstance(layer, nn.ReLU):
+            continue
+        model_prefix = model[:i - 1]
+        batch_x = inputs[None]
+        outputs = model_prefix(batch_x).detach().cpu().numpy()[0]
+        num_dims = int(np.prod(outputs.shape))
+        outputs = outputs.flatten()
 
-            batch_x = inputs[None].repeat(num_dims, *([1] * len(inputs.shape)))
-            batch_x = batch_x.clone().detach().requires_grad_(True)
-            batch_y = model[:i](batch_x)
-            batch_y.view(num_dims, num_dims).backward(torch.eye(num_dims))
-            gradient = batch_x.grad.data.view(num_dims, input_size).detach().cpu().numpy()
-            for i in range(num_dims):
-                if outputs[i] < 0:
-                    A_ub.append(gradient[i])
-                    b_ub.append(-outputs[i])
-                else:
-                    A_ub.append(gradient[i] * -1)
-                    b_ub.append(outputs[i])
+        batch_x = inputs[None].repeat(num_dims, *([1] * len(inputs.shape)))
+        batch_x = batch_x.clone().detach().requires_grad_(True)
+        batch_y = model_prefix(batch_x)
+        batch_y.view(num_dims, num_dims).backward(torch.eye(num_dims))
+        gradient = batch_x.grad.data.view(num_dims, input_size).detach().cpu().numpy()
+        for i in range(num_dims):
+            if outputs[i] < 0:
+                A_ub.append(gradient[i])
+                b_ub.append(-outputs[i])
+            else:
+                A_ub.append(gradient[i] * -1)
+                b_ub.append(outputs[i])
     for i, x in enumerate(inputs.detach().cpu().numpy().flatten()):
         a_vec = np.zeros([input_size], dtype=np.float32)
         a_vec[i] = 1
