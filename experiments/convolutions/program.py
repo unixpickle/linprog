@@ -37,7 +37,7 @@ def input_linear_program(model, inputs, out_loss_fn, epsilon=0.1, min_val=0, max
     for i, layer in enumerate(model):
         if not isinstance(layer, nn.ReLU):
             continue
-        model_prefix = model[:i - 1]
+        model_prefix = model[:i]
         batch_x = inputs[None]
         outputs = model_prefix(batch_x).detach().cpu().numpy()[0]
         num_dims = int(np.prod(outputs.shape))
