@@ -1,4 +1,5 @@
 from scipy.optimize import linprog
+import numpy as np
 import torch
 import torch.nn.functional as F
 
@@ -22,9 +23,17 @@ def main():
         solution = linprog(-grad, A_ub=constraint_coeffs, b_ub=constraint_bounds,
                            bounds=(None, None))
         new_input = sample + torch.from_numpy(solution.x).float().view(*sample.shape)
-        old_prob = F.log_softmax(model(sample[None]), dim=-1)[0, label]
-        new_prob = F.log_softmax(model(new_input[None]), dim=-1)[0, label]
-        print('correct log prob went from %f to %f' % (old_prob, new_prob))
+        fgsm_input = fgsm(sample, grad)
+        old_prob = F.softmax(model(sample[None]), dim=-1)[0, label]
+        new_prob = F.softmax(model(new_input[None]), dim=-1)[0, label]
+        fgsm_prob = F.softmax(model(fgsm_input[None]), dim=-1)[0, label]
+        print('correct prob went from %f to %f (fgsm %f)' % (old_prob, new_prob, fgsm_prob))
+
+
+def fgsm(sample, grad, epsilon=0.1, min_val=0, max_val=1):
+    delta = np.sign(grad) * epsilon
+    return torch.clamp(sample + torch.from_numpy(delta).float().view(*sample.shape),
+                       min_val, max_val)
 
 
 if __name__ == '__main__':
